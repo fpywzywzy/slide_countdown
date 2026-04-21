@@ -49,6 +49,7 @@ class SlideCountdown extends SlideCountdownBase {
     super.shouldShowSeconds,
     super.slideAnimationDuration,
     super.slideAnimationCurve,
+    super.autoPlay = true,
   });
 
   @override
@@ -78,6 +79,7 @@ class _SlideCountdownState extends State<SlideCountdown> {
     _streamDuration = widget.streamDuration ??
         StreamDuration(
           config: StreamDurationConfig(
+            autoPlay: widget.autoPlay,
             isCountUp: widget.countUp,
             onDone: widget.onDone,
             countDownConfig: CountDownConfig(

@@ -20,6 +20,21 @@ class StreamDuration extends ValueNotifier<Duration> {
   /// @nodoc
   bool get isPaused => _timer?.isPaused ?? false;
 
+  /// Target end time for wall-clock based countdown
+  /// Used to sync countdown after app resume from background
+  DateTime? _targetEndTime;
+
+  /// Whether this is a wall-clock based countdown (vs tick-based)
+  bool get isWallClockBased => _targetEndTime != null;
+
+  /// Get the remaining duration based on wall-clock time
+  /// Returns null if not wall-clock based
+  Duration? get remainingFromWallClock {
+    if (_targetEndTime == null) return null;
+    final remaining = _targetEndTime!.difference(DateTime.now());
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
   PausableTimer? _timer;
 
   CountUpConfig get _countUpConfig =>
@@ -57,12 +72,36 @@ class StreamDuration extends ValueNotifier<Duration> {
     _timer?.start();
   }
 
+  /// Start countdown with wall-clock based timing
+  /// This ensures countdown syncs correctly after app resume from background
+  void playWithWallClock(Duration duration) {
+    _targetEndTime = DateTime.now().add(duration);
+    value = duration;
+    play();
+  }
+
+  /// Sync the countdown value based on wall-clock time
+  /// Call this when app resumes from background
+  void syncFromWallClock() {
+    if (_targetEndTime == null) return;
+
+    final remaining = _targetEndTime!.difference(DateTime.now());
+    if (remaining.isNegative) {
+      value = Duration.zero;
+      _onDone();
+    } else {
+      value = remaining;
+      notifyListeners();
+    }
+  }
+
   /// pause duration
   void pause() => _timer?.pause();
 
   /// reset duration to initial duration
   void reset() {
     value = config.duration;
+    _targetEndTime = null;
     notifyListeners();
   }
 
@@ -79,18 +118,25 @@ class StreamDuration extends ValueNotifier<Duration> {
   /// seek to
   void seek(Duration duration) {
     value = duration;
+    _targetEndTime = DateTime.now().add(duration);
     notifyListeners();
   }
 
   /// subtract duration
   void subtract(Duration duration) {
     value -= duration;
+    if (_targetEndTime != null) {
+      _targetEndTime = _targetEndTime!.subtract(duration);
+    }
     notifyListeners();
   }
 
   /// add duration
   void add(Duration duration) {
     value += duration;
+    if (_targetEndTime != null) {
+      _targetEndTime = _targetEndTime!.add(duration);
+    }
     notifyListeners();
   }
 
