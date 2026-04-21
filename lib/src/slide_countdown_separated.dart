@@ -50,19 +50,44 @@ class SlideCountdownSeparated extends SlideCountdownBase {
     super.shouldShowSeconds,
     super.slideAnimationDuration,
     super.slideAnimationCurve,
+    super.autoPlay = true,
+    /// Whether to enable wall-clock based timing for background sync
+    this.enableWallClockSync = false,
   });
+
+  /// Whether to enable wall-clock based timing.
+  /// When enabled, the countdown will sync correctly after app resume.
+  final bool enableWallClockSync;
 
   @override
   State createState() => _SlideCountdownSeparatedState();
 }
 
-class _SlideCountdownSeparatedState extends State<SlideCountdownSeparated> {
+class _SlideCountdownSeparatedState extends State<SlideCountdownSeparated>
+    with WidgetsBindingObserver {
   late final StreamDuration _streamDuration;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _streamDurationListener();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (!widget.enableWallClockSync) return;
+
+    if (state == AppLifecycleState.resumed) {
+      _syncFromWallClock();
+    }
+  }
+
+  void _syncFromWallClock() {
+    if (_streamDuration.isWallClockBased) {
+      _streamDuration.syncFromWallClock();
+    }
   }
 
   @override
@@ -75,24 +100,55 @@ class _SlideCountdownSeparatedState extends State<SlideCountdownSeparated> {
     }
   }
 
+  StreamDuration _createStreamDurationWithWallClock() {
+    return StreamDuration(
+      config: StreamDurationConfig(
+        autoPlay: false,
+        isCountUp: widget.countUp,
+        onDone: widget.onDone,
+        countDownConfig: CountDownConfig(
+          duration: widget.duration!,
+        ),
+        countUpConfig: CountUpConfig(
+          initialDuration: widget.countUpAtDuration != null &&
+                  widget.countUpAtDuration!
+              ? widget.duration!
+              : Duration.zero,
+          maxDuration: widget.infinityCountUp ? null : widget.duration,
+        ),
+      ),
+    );
+  }
+
+  StreamDuration _createStreamDuration() {
+    return StreamDuration(
+      config: StreamDurationConfig(
+        autoPlay: widget.autoPlay,
+        isCountUp: widget.countUp,
+        onDone: widget.onDone,
+        countDownConfig: CountDownConfig(
+          duration: widget.duration!,
+        ),
+        countUpConfig: CountUpConfig(
+          initialDuration: widget.countUpAtDuration != null &&
+                  widget.countUpAtDuration!
+              ? widget.duration!
+              : Duration.zero,
+          maxDuration: widget.infinityCountUp ? null : widget.duration,
+        ),
+      ),
+    );
+  }
+
   void _streamDurationListener() {
-    _streamDuration = widget.streamDuration ??
-        StreamDuration(
-          config: StreamDurationConfig(
-            isCountUp: widget.countUp,
-            onDone: widget.onDone,
-            countDownConfig: CountDownConfig(
-              duration: widget.duration!,
-            ),
-            countUpConfig: CountUpConfig(
-              initialDuration:
-                  widget.countUpAtDuration != null && widget.countUpAtDuration!
-                      ? widget.duration!
-                      : Duration.zero,
-              maxDuration: widget.infinityCountUp ? null : widget.duration,
-            ),
-          ),
-        );
+    if (widget.streamDuration != null) {
+      _streamDuration = widget.streamDuration!;
+    } else if (widget.enableWallClockSync && widget.autoPlay) {
+      _streamDuration = _createStreamDurationWithWallClock();
+      _streamDuration.playWithWallClock(widget.duration!);
+    } else {
+      _streamDuration = _createStreamDuration();
+    }
 
     if (widget.onChanged != null) {
       _streamDuration.addListener(() {
@@ -103,6 +159,7 @@ class _SlideCountdownSeparatedState extends State<SlideCountdownSeparated> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _streamDuration.dispose();
     super.dispose();
   }
