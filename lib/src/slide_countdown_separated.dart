@@ -51,6 +51,7 @@ class SlideCountdownSeparated extends SlideCountdownBase {
     super.slideAnimationDuration,
     super.slideAnimationCurve,
     super.autoPlay = true,
+    super.pause = false,
     /// Whether to enable wall-clock based timing for background sync
     this.enableWallClockSync = false,
   });
@@ -96,6 +97,14 @@ class _SlideCountdownSeparatedState extends State<SlideCountdownSeparated>
     if (widget.streamDuration == null) {
       if (widget.duration != oldWidget.duration) {
         _streamDuration.seek(widget.duration!);
+      }
+    }
+    // ✅ 暂停/继续控制
+    if (widget.pause != oldWidget.pause) {
+      if (widget.pause) {
+        _streamDuration.pause();
+      } else {
+        _streamDuration.resume();
       }
     }
   }

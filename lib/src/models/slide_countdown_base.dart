@@ -37,6 +37,7 @@ abstract class SlideCountdownBase extends StatefulWidget {
     required this.slideAnimationDuration,
     required this.slideAnimationCurve,
     required this.autoPlay,
+    this.pause = false,
     super.key,
   }) : assert(
           duration != null || streamDuration != null,
@@ -170,4 +171,10 @@ abstract class SlideCountdownBase extends StatefulWidget {
   /// Set to false to control start/stop manually using StreamDuration's pause/resume methods.
   /// Default is true for backward compatibility.
   final bool autoPlay;
+
+  /// Whether to pause the countdown.
+  /// When true, the countdown timer stops ticking but keeps its current display.
+  /// Set to false to resume counting down.
+  /// Default is false.
+  final bool pause;
 }
