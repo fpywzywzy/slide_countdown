@@ -19,15 +19,21 @@ typedef ShouldShowItems = bool Function(Duration);
 typedef OverrideDigits = List<String>;
 
 /// The default box decoration of [SlideCountdown]
+///
+/// NOTE: forked for xiaozz — the upstream default red `Color(0xFFF23333)`
+/// clashes with the app color scheme; use a neutral grey as a safety net
+/// for any call site that forgets to pass a themed decoration.
 const kDefaultBoxDecoration = BoxDecoration(
   borderRadius: BorderRadius.all(Radius.circular(20)),
-  color: Color(0xFFF23333),
+  color: Color(0xFF757575),
 );
 
 /// The default box decoration of [SlideCountdownSeparated]
+///
+/// NOTE: forked for xiaozz — see [kDefaultBoxDecoration].
 const kDefaultSeparatedBoxDecoration = BoxDecoration(
   borderRadius: BorderRadius.all(Radius.circular(4)),
-  color: Color(0xFFF23333),
+  color: Color(0xFF757575),
 );
 
 /// The default padding
